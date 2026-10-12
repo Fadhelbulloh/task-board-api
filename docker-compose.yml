@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: taskapi
+      POSTGRES_PASSWORD: taskapi
+      POSTGRES_DB: taskapi
+    ports:
+      - "${DB_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskapi"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      APP_ENV: development
+      PORT: 8080
+      DATABASE_URL: postgres://taskapi:taskapi@db:5432/taskapi?sslmode=disable
+      JWT_SECRET: change-me-to-a-long-random-string-at-least-32-chars
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
